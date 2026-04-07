@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Arslan Asif · Night Shift Flow | 6PM → 2AM (Sunday OFF)</title>
+  <!-- Tailwind CSS CDN + Font Awesome + Google Fonts (Inter) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Anime.js for smooth number animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <!-- Chart.js for sleek graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .glass-card {
+      background: rgba(18, 25, 45, 0.65);
+      backdrop-filter: blur(12px);
+      border-radius: 2rem;
+      border: 1px solid rgba(72, 187, 255, 0.2);
+      transition: all 0.3s ease;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.4);
+    }
+    .glass-card:hover {
+      border-color: rgba(0, 212, 255, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 25px 40px -12px rgba(0, 180, 255, 0.2);
+    }
+    .progress-ring {
+      transition: stroke-dashoffset 0.35s ease;
+    }
+    .timer-digit {
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e2a3a;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2c7da0;
+      border-radius: 10px;
+    }
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+    }
+    .off-day-glow {
+      animation: softPulse 2s infinite;
+    }
+    @keyframes softPulse {
+      0% { box-shadow: 0 0 0px rgba(168, 85, 247, 0); }
+      50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+      100% { box-shadow: 0 0 0px rgba(168, 85, 247, 0); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center">
+
+  <div class="w-full max-w-7xl mx-auto">
+    <!-- HEADER with Profile & Greeting -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <img src="https://avatars.githubusercontent.com/u/140950959?v=4" alt="Arslan Asif" class="w-16 h-16 rounded-2xl border-2 border-cyan-400 shadow-xl object-cover ring-2 ring-cyan-500/30">
+          <div class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-gray-900 animate-pulse"></div>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">Arslan Asif</h1>
+          <p class="text-slate-400 text-sm flex items-center gap-1"><i class="fas fa-moon text-cyan-400 text-xs"></i> night dev shift · 8h mastery (6PM → 2AM) <span class="text-purple-400 ml-2">✨ Sunday OFF ✨</span></p>
+        </div>
+      </div>
+      <div class="glass-card px-5 py-2 rounded-full flex items-center gap-3 text-sm">
+        <i class="fas fa-calendar-alt text-cyan-400"></i>
+        <span id="liveDate" class="text-slate-200 font-medium"></span>
+        <i class="fas fa-clock text-cyan-400 ml-2"></i>
+        <span id="liveClock" class="text-slate-200 font-mono timer-digit"></span>
+      </div>
+    </div>
+
+    <!-- MAIN DASHBOARD GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- LEFT CARD -->
+      <div class="glass-card lg:col-span-2 p-5 md:p-7 relative overflow-hidden" id="mainCard">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl -z-0"></div>
+        <div class="relative z-10">
+          <div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+            <div>
+              <span class="text-slate-300 text-sm uppercase tracking-wider"><i class="fas fa-hourglass-half text-cyan-400 mr-1"></i> <span id="shiftTitle">NIGHT SHIFT PROGRESS</span></span>
+              <h2 class="text-4xl font-black mt-1"><span id="percentageBig" class="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">0</span><span class="text-2xl text-cyan-300">%</span></h2>
+            </div>
+            <div class="bg-black/30 px-3 py-1 rounded-xl text-xs text-cyan-300 border border-cyan-500/30" id="shiftBadge">
+              <i class="fas fa-moon mr-1"></i> 6PM → 2AM · live
+            </div>
+          </div>
+          
+          <div class="flex flex-col md:flex-row items-center justify-between gap-6 mt-4">
+            <div class="relative w-44 h-44 md:w-52 md:h-52">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(56,189,248,0.2)" stroke-width="10" />
+                <circle id="progressCircle" cx="60" cy="60" r="54" fill="none" stroke="url(#gradProgress)" stroke-width="10" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="339.292" class="progress-ring" />
+                <defs>
+                  <linearGradient id="gradProgress" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#2dd4bf" />
+                    <stop offset="100%" stop-color="#3b82f6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span id="percentCenter" class="text-3xl md:text-4xl font-black text-white timer-digit">0</span>
+                <span class="text-xs text-cyan-300 -mt-1">completed</span>
+              </div>
+            </div>
+            <div class="flex-1 grid grid-cols-2 gap-4 w-full">
+              <div class="bg-white/5 rounded-2xl p-4 text-center backdrop-blur-sm border border-white/10">
+                <i class="fas fa-clock text-2xl text-cyan-400 mb-1"></i>
+                <p class="text-slate-400 text-xs uppercase">Elapsed</p>
+                <p id="elapsedTimeDisplay" class="text-xl md:text-2xl font-mono font-bold text-white">0h 0m</p>
+              </div>
+              <div class="bg-white/5 rounded-2xl p-4 text-center backdrop-blur-sm border border-white/10">
+                <i class="fas fa-hourglass-end text-2xl text-blue-400 mb-1"></i>
+                <p class="text-slate-400 text-xs uppercase">Remaining</p>
+                <p id="remainingTimeDisplay" class="text-xl md:text-2xl font-mono font-bold text-white">8h 0m</p>
+              </div>
+              <div class="bg-white/5 rounded-2xl p-4 text-center backdrop-blur-sm col-span-2 flex justify-between items-center">
+                <div>
+                  <p class="text-slate-400 text-xs"><i class="fas fa-stopwatch"></i> seconds left</p>
+                  <p id="secondsLeft" class="text-lg font-mono font-semibold text-cyan-200">28800 s</p>
+                </div>
+                <div>
+                  <p class="text-slate-400 text-xs"><i class="fas fa-chart-simple"></i> exact ratio</p>
+                  <p id="exactPercent" class="text-lg font-mono font-semibold text-white">0.00%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 text-center md:text-left border-t border-white/10 pt-4 flex flex-wrap justify-between items-center">
+            <div class="flex items-center gap-2 text-sm">
+              <i id="motivationIcon" class="fas fa-moon-stars text-purple-400 animate-pulse"></i>
+              <span id="motivationText" class="text-slate-300">Night coding mode, Arslan!</span>
+            </div>
+            <div class="text-xs text-slate-500 bg-black/20 px-3 py-1 rounded-full mt-2 md:mt-0">
+              <i class="far fa-bell"></i> realtime second precision
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT CARD -->
+      <div class="glass-card p-5 flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-semibold text-white"><i class="fas fa-chart-line text-cyan-400 mr-2"></i>Night shift intensity curve</h3>
+          <span class="text-[10px] text-slate-400 bg-black/30 px-2 py-1 rounded-full">live progress</span>
+        </div>
+        <div class="relative h-48 w-full">
+          <canvas id="progressChart" class="w-full h-full"></canvas>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-center text-sm">
+          <div class="bg-cyan-950/30 rounded-xl p-2">
+            <p class="text-slate-400 text-[11px]">Target finish</p>
+            <p class="text-white font-mono font-bold">02:00 AM</p>
+            <p class="text-[10px] text-cyan-300">(next day)</p>
+          </div>
+          <div class="bg-cyan-950/30 rounded-xl p-2">
+            <p class="text-slate-400 text-[11px]">Current status</p>
+            <p id="statusTag" class="text-green-400 font-semibold text-sm">NIGHT SHIFT</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="glass-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fas fa-chart-simple text-purple-400"></i>
+          <h3 class="font-medium text-white">Hourly milestones (6PM → 2AM)</h3>
+        </div>
+        <div id="hourlySegments" class="flex flex-wrap gap-2 justify-between"></div>
+        <div class="mt-3 text-xs text-slate-400 flex justify-between">
+          <span><i class="far fa-clock"></i> each block = 1 hour</span>
+          <span id="completedHoursBadge">0/8 completed</span>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 overflow-hidden relative">
+        <div class="absolute right-0 bottom-0 opacity-10 text-7xl"><i class="fas fa-hourglass-half"></i></div>
+        <i class="fas fa-stopwatch text-cyan-400 text-xl mb-2 block"></i>
+        <p class="text-slate-300 text-sm">countdown till 2AM freedom</p>
+        <div class="flex items-baseline gap-1 mt-1 flex-wrap">
+          <span id="countdownHours" class="text-3xl font-mono font-black text-white">00</span><span class="text-white">h</span>
+          <span id="countdownMinutes" class="text-3xl font-mono font-black text-white">00</span><span class="text-white">m</span>
+          <span id="countdownSeconds" class="text-3xl font-mono font-black text-white">00</span><span class="text-white">s</span>
+        </div>
+        <div class="w-full bg-gray-700/50 rounded-full h-1.5 mt-3">
+          <div id="progressBarMini" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-1.5 rounded-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 flex flex-col justify-between">
+        <div>
+          <i class="fas fa-brain text-yellow-400 text-lg"></i>
+          <p class="text-white font-medium mt-1">focus fuel · night owl wisdom</p>
+          <p id="funFact" class="text-slate-300 text-xs mt-1 leading-relaxed">Loading smart insight...</p>
+        </div>
+        <div class="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
+          <span class="text-[10px] text-slate-400"><i class="far fa-lightbulb"></i> Arslan's night shift edge</span>
+          <i class="fas fa-arrows-spin text-cyan-400 animate-spin-slow" style="animation: spin 8s linear infinite;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== NIGHT SHIFT CONFIGURATION ====================
+    const WORK_START_HOUR = 18;    // 6:00 PM
+    const WORK_DURATION_HOURS = 8; // 8 hours
+    const WORK_END_HOUR = 2;       // 2:00 AM (next day)
+    
+    let chart;
+
+    // DOM elements
+    const percentageBigSpan = document.getElementById('percentageBig');
+    const percentCenterSpan = document.getElementById('percentCenter');
+    const elapsedTimeDisplay = document.getElementById('elapsedTimeDisplay');
+    const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+    const secondsLeftSpan = document.getElementById('secondsLeft');
+    const exactPercentSpan = document.getElementById('exactPercent');
+    const progressCircle = document.getElementById('progressCircle');
+    const motivationTextSpan = document.getElementById('motivationText');
+    const motivationIcon = document.getElementById('motivationIcon');
+    const statusTag = document.getElementById('statusTag');
+    const countdownHoursSpan = document.getElementById('countdownHours');
+    const countdownMinutesSpan = document.getElementById('countdownMinutes');
+    const countdownSecondsSpan = document.getElementById('countdownSeconds');
+    const progressBarMini = document.getElementById('progressBarMini');
+    const completedHoursBadge = document.getElementById('completedHoursBadge');
+    const hourlySegmentsDiv = document.getElementById('hourlySegments');
+    const funFactSpan = document.getElementById('funFact');
+    const shiftTitle = document.getElementById('shiftTitle');
+    const shiftBadge = document.getElementById('shiftBadge');
+    const mainCard = document.getElementById('mainCard');
+
+    // Helper function to get the correct start and end dates for the shift
+    function getShiftTimes() {
+      const now = new Date();
+      let start = new Date(now);
+      let end = new Date(now);
+      
+      // Set start time to today at 6:00 PM
+      start.setHours(WORK_START_HOUR, 0, 0, 0);
+      
+      // Set end time: if current time is after midnight but before 2AM, 
+      // end should be today at 2AM (which is actually tomorrow's date)
+      if (now.getHours() < WORK_END_HOUR) {
+        // We're in the early morning hours (12AM - 2AM)
+        // The shift started yesterday at 6PM
+        start.setDate(start.getDate() - 1);
+        start.setHours(WORK_START_HOUR, 0, 0, 0);
+        end.setHours(WORK_END_HOUR, 0, 0, 0);
+      } else if (now.getHours() >= WORK_START_HOUR) {
+        // We're in the evening (6PM - 11:59PM)
+        // End is tomorrow at 2AM
+        end.setDate(end.getDate() + 1);
+        end.setHours(WORK_END_HOUR, 0, 0, 0);
+      } else {
+        // Before 6PM, not in shift yet
+        end.setHours(WORK_END_HOUR, 0, 0, 0);
+        end.setDate(end.getDate() + 1);
+      }
+      
+      return { start, end };
+    }
+
+    // Helper: get current progress
+    function getWorkProgress() {
+      const now = new Date();
+      
+      // Check for Sunday OFF
+      const currentDay = now.getDay();
+      const currentHours = now.getHours();
+      const isSunday = currentDay === 0;
+      const isMondayEarlyMorning = currentDay === 1 && currentHours < WORK_END_HOUR;
+      
+      if (isSunday || isMondayEarlyMorning) {
+        return {
+          elapsedSec: 0,
+          remainingSec: 0,
+          progressPercent: 0,
+          totalWorkSec: WORK_DURATION_HOURS * 3600,
+          isBeforeStart: false,
+          isAfterEnd: false,
+          isOffDay: true
+        };
+      }
+      
+      const { start, end } = getShiftTimes();
+      const totalWorkSec = WORK_DURATION_HOURS * 3600;
+      let elapsedSec = 0;
+      let progressPercent = 0;
+      
+      if (now < start) {
+        // Before shift starts
+        elapsedSec = 0;
+        progressPercent = 0;
+      } else if (now >= end) {
+        // After shift ends
+        elapsedSec = totalWorkSec;
+        progressPercent = 100;
+      } else {
+        // During shift
+        elapsedSec = Math.floor((now - start) / 1000);
+        if (elapsedSec > totalWorkSec) elapsedSec = totalWorkSec;
+        progressPercent = (elapsedSec / totalWorkSec) * 100;
+      }
+      
+      const remainingSec = Math.max(0, totalWorkSec - elapsedSec);
+      
+      return {
+        elapsedSec,
+        remainingSec,
+        progressPercent,
+        totalWorkSec,
+        isBeforeStart: now < start,
+        isAfterEnd: now >= end,
+        isOffDay: false
+      };
+    }
+    
+    function formatTimeFromSec(sec) {
+      const hrs = Math.floor(sec / 3600);
+      const mins = Math.floor((sec % 3600) / 60);
+      const secs = sec % 60;
+      return { hrs, mins, secs };
+    }
+    
+    function formatHM(sec) {
+      const { hrs, mins } = formatTimeFromSec(sec);
+      return `${hrs}h ${mins}m`;
+    }
+    
+    function updateHourlyBlocks(elapsedSec, totalSec, isOffDay = false) {
+      if (isOffDay) {
+        hourlySegmentsDiv.innerHTML = '';
+        for (let i = 0; i < WORK_DURATION_HOURS; i++) {
+          const hourBlock = document.createElement('div');
+          hourBlock.className = `w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30`;
+          hourBlock.innerHTML = '<i class="fas fa-heart text-xs text-pink-400"></i>';
+          hourlySegmentsDiv.appendChild(hourBlock);
+        }
+        completedHoursBadge.innerText = `✨ SUNDAY OFF · REST DAY ✨`;
+        return;
+      }
+      
+      const completedHours = Math.floor(elapsedSec / 3600);
+      hourlySegmentsDiv.innerHTML = '';
+      for (let i = 0; i < WORK_DURATION_HOURS; i++) {
+        const isCompleted = i < completedHours;
+        const isCurrent = i === completedHours && elapsedSec > 0 && elapsedSec < totalSec;
+        let bgClass = 'bg-gray-700/40';
+        if (isCompleted) bgClass = 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md';
+        if (isCurrent) bgClass = 'bg-cyan-500/50 border border-cyan-300 animate-pulse';
+        const hourBlock = document.createElement('div');
+        hourBlock.className = `w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${bgClass} text-white transition-all`;
+        hourBlock.innerText = `${i+1}`;
+        if (isCompleted) hourBlock.innerHTML = '<i class="fas fa-check text-[10px]"></i>';
+        hourlySegmentsDiv.appendChild(hourBlock);
+      }
+      completedHoursBadge.innerText = `${completedHours}/${WORK_DURATION_HOURS} completed`;
+    }
+    
+    function updateDashboard() {
+      const progress = getWorkProgress();
+      const { elapsedSec, remainingSec, progressPercent, totalWorkSec, isBeforeStart, isAfterEnd, isOffDay } = progress;
+      const percent = Math.min(100, Math.max(0, progressPercent));
+      
+      if (isOffDay) {
+        statusTag.innerText = "✨ SUNDAY · OFF DAY ✨";
+        statusTag.className = "text-purple-400 font-semibold text-sm animate-pulse";
+        motivationTextSpan.innerText = "🌟 Sunday is yours! Rest, recharge, and enjoy your day off. No work today! 🌟";
+        motivationIcon.className = "fas fa-heart text-pink-400 animate-pulse text-xl";
+        shiftTitle.innerText = "SUNDAY · REST DAY";
+        shiftBadge.innerHTML = '<i class="fas fa-heart mr-1 text-pink-400"></i> OFF DAY · NO WORK';
+        shiftBadge.className = "bg-purple-500/20 px-3 py-1 rounded-xl text-xs text-purple-300 border border-purple-500/30";
+        
+        percentageBigSpan.innerText = "0";
+        percentCenterSpan.innerText = "0";
+        exactPercentSpan.innerText = "0.00%";
+        elapsedTimeDisplay.innerText = "0h 0m";
+        remainingTimeDisplay.innerText = "0h 0m";
+        secondsLeftSpan.innerText = "0 s";
+        countdownHoursSpan.innerText = "00";
+        countdownMinutesSpan.innerText = "00";
+        countdownSecondsSpan.innerText = "00";
+        if (progressBarMini) progressBarMini.style.width = "0%";
+        
+        const circumference = 339.292;
+        if (progressCircle) progressCircle.style.strokeDashoffset = circumference;
+        
+        updateHourlyBlocks(0, totalWorkSec, true);
+        
+        if (chart) {
+          const zeroData = new Array(9).fill(0);
+          chart.data.datasets[0].data = zeroData;
+          chart.update();
+        }
+        
+        mainCard.classList.add('off-day-glow');
+        return;
+      }
+      
+      mainCard.classList.remove('off-day-glow');
+      shiftTitle.innerText = "NIGHT SHIFT PROGRESS";
+      shiftBadge.innerHTML = '<i class="fas fa-moon mr-1"></i> 6PM → 2AM · live';
+      shiftBadge.className = "bg-black/30 px-3 py-1 rounded-xl text-xs text-cyan-300 border border-cyan-500/30";
+      
+      percentageBigSpan.innerText = Math.floor(percent);
+      percentCenterSpan.innerText = Math.floor(percent);
+      exactPercentSpan.innerText = percent.toFixed(2) + "%";
+      
+      elapsedTimeDisplay.innerText = formatHM(elapsedSec);
+      remainingTimeDisplay.innerText = formatHM(remainingSec);
+      secondsLeftSpan.innerText = remainingSec + " s";
+      
+      const circumference = 339.292;
+      const offset = circumference - (percent / 100) * circumference;
+      if (progressCircle) progressCircle.style.strokeDashoffset = offset;
+      
+      if (progressBarMini) progressBarMini.style.width = percent + "%";
+      
+      const { hrs: remH, mins: remM, secs: remS } = formatTimeFromSec(remainingSec);
+      countdownHoursSpan.innerText = remH.toString().padStart(2,'0');
+      countdownMinutesSpan.innerText = remM.toString().padStart(2,'0');
+      countdownSecondsSpan.innerText = remS.toString().padStart(2,'0');
+      
+      if (isBeforeStart) {
+        statusTag.innerText = "🌙 AWAITING START";
+        statusTag.className = "text-yellow-400 font-semibold text-sm";
+        motivationTextSpan.innerText = "🌙 Shift starts at 6:00 PM. Get ready, night coder!";
+        motivationIcon.className = "fas fa-moon text-yellow-300 animate-pulse";
+      } else if (isAfterEnd) {
+        statusTag.innerText = "✅ SHIFT COMPLETE";
+        statusTag.className = "text-green-400 font-semibold text-sm";
+        motivationTextSpan.innerText = "🎉 Amazing work till 2AM! Rest well, Arslan!";
+        motivationIcon.className = "fas fa-star-of-life text-green-400";
+      } else {
+        statusTag.innerText = "⚡ NIGHT CODING · ACTIVE";
+        statusTag.className = "text-cyan-400 font-semibold text-sm";
+        if (percent < 30) motivationTextSpan.innerText = "🌙 Night just started! Energy rising. Keep coding!";
+        else if (percent < 70) motivationTextSpan.innerText = "🚀 Deep focus mode! You're crushing it, Arslan!";
+        else motivationTextSpan.innerText = "🏁 Final stretch! Finish strong before sunrise!";
+        motivationIcon.className = "fas fa-fire text-orange-400 animate-pulse";
+      }
+      
+      updateHourlyBlocks(elapsedSec, totalWorkSec, false);
+      if (chart) updateChartDataDynamic();
+    }
+    
+    function updateChartDataDynamic() {
+      if (!chart) return;
+      const progress = getWorkProgress();
+      if (progress.isOffDay) {
+        const zeroData = new Array(9).fill(0);
+        chart.data.datasets[0].data = zeroData;
+        chart.update();
+        return;
+      }
+      
+      const { elapsedSec, totalWorkSec, progressPercent } = progress;
+      const actualPoints = [];
+      
+      // Calculate progress at each hour mark (0-8 hours)
+      for (let i = 0; i <= 8; i++) {
+        const targetSec = i * 3600; // Target seconds for this hour mark
+        if (elapsedSec >= targetSec) {
+          // We've passed this hour mark, show the expected progress at that time
+          const percentAtHour = (targetSec / totalWorkSec) * 100;
+          actualPoints.push(Math.min(100, percentAtHour));
+        } else {
+          // We haven't reached this hour yet, show current progress or 0 for future hours
+          if (i === 0) {
+            actualPoints.push(0);
+          } else {
+            actualPoints.push(progressPercent);
+          }
+        }
+      }
+      // Ensure final point shows current progress
+      actualPoints[8] = progressPercent;
+      
+      chart.data.datasets[0].data = actualPoints;
+      chart.update();
+    }
+    
+    function initChart() {
+      const ctx = document.getElementById('progressChart').getContext('2d');
+      const labels = ['6PM', '7PM', '8PM', '9PM', '10PM', '11PM', '12AM', '1AM', '2AM'];
+      const idealData = [0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100];
+      const actualData = new Array(9).fill(0);
+      
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Ideal progress %',
+              data: idealData,
+              borderColor: '#5ee0fa',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 2,
+              pointBackgroundColor: '#2dd4bf',
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Your actual %',
+              data: actualData,
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249,115,22,0.1)',
+              borderWidth: 3,
+              pointRadius: 4,
+              pointBackgroundColor: '#ffb347',
+              pointBorderColor: '#ffffff',
+              tension: 0.3,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { size: 9 } }, position: 'top' },
+            tooltip: { mode: 'index' }
+          },
+          scales: {
+            y: { 
+              min: 0, 
+              max: 100, 
+              grid: { color: '#2d3e5f' }, 
+              title: { display: true, text: 'Completion %', color: '#94a3b8' },
+              ticks: { callback: function(val) { return val + '%'; } }
+            },
+            x: { grid: { color: '#2d3e5f' }, ticks: { color: '#cbd5e6' } }
+          }
+        }
+      });
+    }
+    
+    function updateClockAndDate() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('liveDate').innerText = dateStr;
+      document.getElementById('liveClock').innerText = timeStr;
+    }
+    
+    const funFacts = [
+      "🌙 Night owls have 13% higher cognitive flexibility. You're wired for this!",
+      "💻 2AM code commits are legendary. Keep building, Arslan!",
+      "☕ Caffeine timing: best before midnight to protect sleep after 2AM.",
+      "🎧 Deep work after 10PM reduces distractions by 40%.",
+      "🚀 Your night shift focus = superpower. Most bugs get fixed post-midnight.",
+      "📈 8 hours of night dev = consistent flow state.",
+      "⭐ The quiet hours (12AM-2AM) boost creativity significantly.",
+      "🏆 Finish line at 2AM: celebrate every small win!",
+      "✨ Sunday OFF means you deserve quality rest. Recharge for Monday!",
+      "💪 Consistency > Intensity. Night shifts build discipline!"
+    ];
+    
+    let factIndex = 0;
+    function rotateFunFact() {
+      const progress = getWorkProgress();
+      if (progress.isOffDay) {
+        funFactSpan.innerText = "🌟 Sunday Special: Take a break, you've earned it! 🌟 Rest well, Arslan!";
+      } else {
+        factIndex = (factIndex + 1) % funFacts.length;
+        funFactSpan.innerText = funFacts[factIndex];
+      }
+    }
+    
+    let lastPercentValue = 0;
+    function animatePercentChange(newPercent) {
+      if (Math.abs(lastPercentValue - newPercent) < 0.3) return;
+      lastPercentValue = newPercent;
+      anime({
+        targets: { val: parseFloat(percentageBigSpan.innerText) || 0 },
+        val: newPercent,
+        round: 1,
+        easing: 'easeOutQuad',
+        duration: 450,
+        update: function(anim) {
+          const currentVal = Math.floor(anim.animations[0].currentValue);
+          percentageBigSpan.innerText = currentVal;
+          percentCenterSpan.innerText = currentVal;
+        }
+      });
+    }
+    
+    let lastDisplayPercent = 0;
+    function mainLoop() {
+      const { progressPercent, isOffDay } = getWorkProgress();
+      updateDashboard();
+      updateClockAndDate();
+      if (!isOffDay && Math.abs(lastDisplayPercent - progressPercent) > 0.2) {
+        animatePercentChange(progressPercent);
+        lastDisplayPercent = progressPercent;
+      }
+      requestAnimationFrame(() => setTimeout(mainLoop, 500));
+    }
+    
+    setInterval(() => {
+      const progress = getWorkProgress();
+      if (progress.isOffDay) return;
+      
+      if (document.hasFocus()) {
+        const { remainingSec, progressPercent } = progress;
+        const { hrs, mins, secs } = formatTimeFromSec(remainingSec);
+        countdownHoursSpan.innerText = hrs.toString().padStart(2,'0');
+        countdownMinutesSpan.innerText = mins.toString().padStart(2,'0');
+        countdownSecondsSpan.innerText = secs.toString().padStart(2,'0');
+        secondsLeftSpan.innerText = remainingSec + " s";
+        if (progressBarMini) progressBarMini.style.width = progressPercent + "%";
+        const { elapsedSec } = progress;
+        elapsedTimeDisplay.innerText = formatHM(elapsedSec);
+        remainingTimeDisplay.innerText = formatHM(remainingSec);
+      }
+    }, 200);
+    
+    initChart();
+    mainLoop();
+    setInterval(updateClockAndDate, 1000);
+    rotateFunFact();
+    setInterval(rotateFunFact, 20000);
+    
+    setTimeout(() => {
+      updateDashboard();
+      if (chart) updateChartDataDynamic();
+    }, 100);
+  </script>
+</body>
+</html>
